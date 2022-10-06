@@ -1,4 +1,4 @@
-import { nanoid } from 'nanoid'
+import personService from '../services/persons'
 
 const PersonForm = ({ persons, setPersons, newName, setNewName, newNumber, setNewNumber }) => {
   const addPerson = (e) => {
@@ -6,19 +6,28 @@ const PersonForm = ({ persons, setPersons, newName, setNewName, newNumber, setNe
     const personObject = {
       name: newName,
       number: newNumber,
-      id: nanoid()
+      id: persons.length + 1
     }
 
-    const names = persons.reduce((arr, person) =>
-      arr.concat(person.name), []
-    )
-
-    if (names.includes(newName)) {
-      alert(`${newName} is already added to phonebook`)
+    if (persons.some(person => person.name === newName)) {
+      const existPerson = persons.find(person => person.name === newName)
+      const existID = existPerson.id
+      const changedPerson = {...existPerson, number: newNumber}
+      if(window.confirm(`${newName} is already added to phonebook, replace the old number with a new one?`)) {
+        personService
+          .update(existID, changedPerson)
+          .then(returnedPerson => {
+            setPersons(persons.map(person => person.id !== existID ? person : returnedPerson))
+          })
+      }
     } else {
-      setPersons(persons.concat(personObject))
-      setNewName('')
-      setNewNumber('')
+      personService
+        .create(personObject)
+        .then(returnedPerson => {
+          setPersons(persons.concat(returnedPerson))
+          setNewName('')
+          setNewNumber('')
+        })
     }
   }
 
